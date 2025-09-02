@@ -46,7 +46,6 @@ class Game {
         
         let truth;
         try {
-            // truth = convertCardString(combo);
             truth = claimExistsInPool(combo, this.players, this.pot);
         } catch (e) {
             console.error("Invalid combo: ", combo);

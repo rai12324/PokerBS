@@ -51,74 +51,13 @@ function claimExistsInPool(claimStr, players, pot) {
     claimedCards.forEach(card => {
         const value = card.slice(0, -1);
         const suit = card.slice(-1); // last character is the suit
-        // occurence[suit] = (occurence[suit] || 0) + 1;
         occurence[suit] = value;
     });
     console.log("occurence: ", occurence);
-
-    // let meetsCondition = true;
-    // occurence.forEach(suit => {
-    //     console.log("in loop: ", suit);
-    //     if (occurence[suit] > suitCounts[suit])
-    //         meetsCondition = false;
-    // });
-
-    // console.log("In claimExistsInPool: ", meetsCondition);
-    // return meetsCondition;
 
     return Object.entries(occurence).every(([key, value]) => {
         return Number(value) <= (suitCounts[key] || 0);
     });
 }
-
-// function claimExistsInPool(claimStr, players, pot) {
-//     const claimedCards = convertCardString(claimStr).split(" ");
-//     const currentPool = getCurrentPool(players, pot).split(" ");
-
-//     // Count suits in pool
-//     const poolSuitCounts = {};
-//     currentPool.forEach(card => {
-//         const suit = card.slice(-1);
-//         poolSuitCounts[suit] = (poolSuitCounts[suit] || 0) + 1;
-//     });
-
-//     // Count suits in claim
-//     const claimSuitCounts = {};
-//     claimedCards.forEach(card => {
-//         const suit = card.slice(-1);
-//         claimSuitCounts[suit] = (claimSuitCounts[suit] || 0) + 1;
-//     });
-
-//     // Check if claim suits exist in pool
-//     for (const suit in claimSuitCounts) {
-//         if ((poolSuitCounts[suit] || 0) < claimSuitCounts[suit]) {
-//             return false;
-//         }
-//     }
-//     return true;
-// }
-
-// function claimExistsInPool(claimStr, players, pot) {
-//     const currentPool = getCurrentPool(players, pot).split(" ");
-
-//     // Count suits in pool
-//     const poolSuitCounts = {};
-//     currentPool.forEach(card => {
-//         const suit = card.slice(-1);
-//         poolSuitCounts[suit] = (poolSuitCounts[suit] || 0) + 1;
-//     });
-
-//     // Parse claim string as "<number><suit>" like "3H"
-//     const claimParts = claimStr.split(" ");
-//     for (const part of claimParts) {
-//         const num = parseInt(part.slice(0, -1));
-//         const suit = part.slice(-1);
-//         if ((poolSuitCounts[suit] || 0) < num) {
-//             return false; // not enough cards of this suit
-//         }
-//     }
-
-//     return true;
-// }
 
 module.exports = { convertCardString, getCurrentPool, claimExistsInPool };
