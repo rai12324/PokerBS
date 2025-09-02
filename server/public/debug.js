@@ -18,13 +18,27 @@ async function fetchState() {
     document.getElementById('pot').innerHTML = "<h2>Pot</h2><pre>" +
         JSON.stringify(state.pot, null, 2) + "</pre>";
 
-    // Claims
-    document.getElementById('claims').innerHTML = "<h2>Claims</h2><pre>" +
-        JSON.stringify(state.claims, null, 2) + "</pre>";
+    // // Claims
+    // document.getElementById('claims').innerHTML = "<h2>Claims</h2><pre>" +
+    //     JSON.stringify(state.claims, null, 2) + "</pre>";
 
-    // Deck
-    // document.getElementById('deck').innerHTML = "<h2>Deck</h2><pre>" +
-    //     JSON.stringify(state.deck, null, 2) + "</pre>";
+    const claimsDiv = document.getElementById('claims');
+    claimsDiv.innerHTML = "<h2>Claims</h2>" +
+        (state.claims.length
+            ? state.claims.map(c => `
+                <div class="claim">
+                    <div><strong>Claimant:</strong> ${c.claimantId}</div>
+                    <div><strong>Combo:</strong> ${c.combo}</div>
+                    <div><strong>Truth:</strong> 
+                        <span class="${c.truth === true ? 'truth-true' : c.truth === false ? 'truth-false' : 'truth-unknown'}">
+                            ${c.truth === true ? '✔ True' : c.truth === false ? '✘ False' : '❓ Unknown'}
+                        </span>
+                    </div>
+                </div>
+            `).join('')
+            : "<div>No claims yet</div>"
+        );
+
 
     // Deck
     document.getElementById('deck').innerHTML = "<h2>Deck</h2><pre>" +

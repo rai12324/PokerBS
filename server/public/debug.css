@@ -37,3 +37,22 @@ pre {
     white-space: pre-wrap;
     word-break: break-word;
 }
+.claim {
+    margin-bottom: 10px;
+    padding: 8px;
+    border: 1px solid #ddd;
+    border-radius: 6px;
+    background: #f9f9f9;
+}
+.truth-true {
+    color: green;
+    font-weight: bold;
+}
+.truth-false {
+    color: red;
+    font-weight: bold;
+}
+.truth-unknown {
+    color: gray;
+    font-style: italic;
+}
