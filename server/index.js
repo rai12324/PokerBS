@@ -45,6 +45,7 @@ io.on('connection', (socket) => {
     socket.on('callBS', (claimantId) => {
         const result = game.callBS(socket.id, claimantId);
         io.emit('bsResult', result);
+        io.emit('players', game.getPlayerStatus()); // update player info
     });
 
     socket.on('disconnect', () => {

@@ -14,7 +14,24 @@ function Game({ socket }) {
             setLastClaimHistory(prev => [...prev, c]); // append to history
             alert(`Player made claim: ${c.combo}`);
         });
-        socket.on('bsResult', (r) => alert(`BS result: player ${r.loserId} drew a card`));
+
+        socket.on('bsResult', (r) => {
+            alert(`BS result: player ${r.loserId} got extra card!`);
+            
+            // Update hands locally
+            const newHands = {};
+            r.hands.forEach(h => {
+                newHands[h.id] = h.hand;
+            });
+
+            // Update the hand if it's your own
+            if (newHands[socket.id]) setHand(newHands[socket.id]);
+
+            if (r.playerStatus) setPlayers(r.playerStatus);
+
+            // Reset claim log for new round
+            setLastClaimHistory([]);
+        });
 
         // Receive username after joining
         socket.on('yourName', (name) => setUserName(name));

@@ -67,16 +67,89 @@ class Game {
         return claim;
     }
 
+    // // New method: redeal all players' hands
+    // redealHands(extraForLoserId = null) {
+    //     // Reset deck + pot
+    //     this.deck = this.createDeck();
+    //     this.pot = this.drawCards(3);
+
+    //     // Redeal hands
+    //     for (let player of this.players) {
+    //         player.hand = this.drawCards(2);
+    //         player.active = true; // reset active status
+    //     }
+
+    //     // Give extra card to the loser
+    //     if (extraForLoserId) {
+    //         const loser = this.players.find(p => p.id === extraForLoserId);
+    //         if (loser && this.deck.length > 0) {
+    //             loser.hand.push(this.deck.pop());
+    //         }
+    //     }
+
+    //     // Clear claims for new round
+    //     this.claims = [];
+    // }
+
+    redealHands(extraForLoserId = null) {
+        // 1. Collect all player hands into the deck
+        for (let player of this.players) {
+            this.deck.push(...player.hand);
+            player.hand = [];
+        }
+
+        // 2. Shuffle the deck
+        this.deck = this.shuffle(this.deck);
+
+        // 3. Draw new pot
+        this.pot = this.drawCards(3);
+
+        // 4. Deal minimum 2 cards per player
+        for (let player of this.players) {
+            while (player.hand.length < 2 && this.deck.length > 0) {
+                player.hand.push(this.deck.pop());
+            }
+            player.active = player.hand.length < 5;
+        }
+
+        // 5. Give extra card to the loser
+        if (extraForLoserId) {
+            const loser = this.players.find(p => p.id === extraForLoserId);
+            if (loser && this.deck.length > 0) {
+                loser.hand.push(this.deck.pop());
+                loser.active = loser.hand.length < 5;
+            }
+        }
+
+        // 6. Reset claims
+        this.claims = [];
+    }
+
     callBS(callerId, claimantId) {
         const claim = this.claims.find(c => c.claimantId === claimantId);
-        if (!claim) return {error:'No claim found'};
-        let loserId = claim.truth ? callerId : claimantId;
-        let loser = this.players.find(p => p.id === loserId);
-        if (loser && this.deck.length > 0) {
-            loser.hand.push(this.deck.pop());
-            if (loser.hand.length >= 5) loser.active = false;
+        if (!claim) return { error: 'No claim found' };
+
+        // Determine loser carefully
+        let loserId;
+        if (claim.truth === true) {
+            // Claim was true → caller loses
+            loserId = callerId;
+        } else {
+            // Claim was false or invalid → claimant loses
+            loserId = claimantId;
         }
-        return {loserId, loserHandCount: loser.hand.length};
+
+        // Redeal all hands, giving extra card to loser
+        this.redealHands(loserId);
+
+        return {
+            loserId,
+            hands: this.players.map(p => ({
+                id: p.id,
+                //hand: p.hand.map(c => `${c.rank}${c.suit}`) 
+                hand: p.hand
+            }))
+        };
     }
 
     // inside Game class
