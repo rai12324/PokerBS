@@ -1,8 +1,10 @@
+const { convertCardString, getCurrentPool } = require('./utility'); // adjust path if needed
+
 class Game {
     constructor() {
         this.players = []; // {id, name, hand, active}
         this.deck = this.createDeck();
-        this.pot = this.drawCards(5);
+        this.pot = this.drawCards(3);
         this.claims = []; // {claimantId, combo, truth}
     }
 
@@ -41,7 +43,17 @@ class Game {
 
     makeClaim(playerId, combo) {
         // For prototype, randomly decide if claim is truthful
-        const truth = Math.random() < 0.6;
+        //const truth = Math.random() < 0.6;
+
+        // calculate truth
+        let truth;
+        try {
+            truth = convertCardString(combo);
+        } catch (e) {
+            console.error("Invalid combo: ", combo);
+            truth = null;
+        }
+
         const claim = {claimantId: playerId, combo, truth};
         this.claims.push(claim);
         return claim;
@@ -61,6 +73,8 @@ class Game {
 
     // inside Game class
     getDebugState() {
+        const currentPool = getCurrentPool(this.players, this.pot);
+
         return {
             players: this.players.map(p => ({
                 id: p.id,
@@ -69,7 +83,9 @@ class Game {
                 active: p.active
             })),
             pot: this.pot.map(c => `${c.rank}${c.suit}`),
-            deckCount: this.deck.length
+            deckCount: this.deck.length,
+            claims: this.claims,
+            currentPool
         };
     }
 }
