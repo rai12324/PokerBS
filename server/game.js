@@ -58,6 +58,20 @@ class Game {
         }
         return {loserId, loserHandCount: loser.hand.length};
     }
+
+    // inside Game class
+    getDebugState() {
+        return {
+            players: this.players.map(p => ({
+                id: p.id,
+                name: p.name,
+                hand: p.hand.map(c => `${c.rank}${c.suit}`),
+                active: p.active
+            })),
+            pot: this.pot.map(c => `${c.rank}${c.suit}`),
+            deckCount: this.deck.length
+        };
+    }
 }
 
 module.exports = Game;
