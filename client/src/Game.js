@@ -91,7 +91,7 @@ function Game({ socket }) {
                     <h4>Last Claim Made</h4>
                     {lastClaim ? (
                         <div>
-                            <p><strong>Player:</strong> {lastClaim.claimantId}</p>
+                            <p><strong>Player:</strong> {lastClaim.claimantName}</p>
                             <p><strong>Combo:</strong> {lastClaim.combo}</p>
                         </div>
                     ) : (

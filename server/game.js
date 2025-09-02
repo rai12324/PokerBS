@@ -28,7 +28,7 @@ class Game {
 
     addPlayer(id, name) {
         const hand = this.drawCards(2);
-        const player = { id, name, hand, active: true };
+        const player = { id: id.toString(), name, hand, active: true };
         this.players.push(player);
         return player;
     }
@@ -38,12 +38,14 @@ class Game {
     }
 
     getPlayerStatus() {
-        return this.players.map(p => ({name: p.name, cards: p.hand.length, active: p.active}));
+        return this.players.map(p => ({id: p.id, name: p.name, cards: p.hand.length, active: p.active}));
     }
 
     makeClaim(playerId, combo) {
         // Note: [truth = 1] <- the claim was valid | [truth = 0] <- the claim was invalid
-        
+        // console.log('makeClaim called with playerId:', playerId);
+        // console.log('Current players:', this.players);
+
         let truth;
         try {
             truth = claimExistsInPool(combo, this.players, this.pot);
@@ -52,7 +54,15 @@ class Game {
             truth = null;
         }
 
-        const claim = {claimantId: playerId, combo, truth};
+        const player = this.players.find(p => p.id === playerId);
+        // console.log('Found player:', player);
+        
+        const claim = {
+            claimantId: playerId,
+            claimantName: player ? player.name : 'Unknown',
+            combo,
+            truth
+        };
         this.claims.push(claim);
         return claim;
     }
