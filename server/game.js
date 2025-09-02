@@ -56,7 +56,7 @@ class Game {
 
         const player = this.players.find(p => p.id === playerId);
         // console.log('Found player:', player);
-        
+
         const claim = {
             claimantId: playerId,
             claimantName: player ? player.name : 'Unknown',

@@ -39,9 +39,6 @@ io.on('connection', (socket) => {
     socket.on('claim', (combo) => {
         const result = game.makeClaim(socket.id, combo);
         io.emit('claimMade', result);
-        // const claim = game.makeClaim(socket.id, combo);
-        // const player = game.players.find(p => p.id === socket.id);
-        // io.emit('claimMade', { ...claim, claimantName: player.name });
     });
 
     // Player calls BS on a claim

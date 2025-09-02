@@ -4,19 +4,19 @@ function Game({ socket }) {
     const [hand, setHand] = useState([]);
     const [players, setPlayers] = useState([]);
     const [claim, setClaim] = useState('');
-    const [lastClaim, setLastClaim] = useState(null);
+    const [lastClaimHistory, setLastClaimHistory] = useState([]);
     const [userName, setUserName] = useState('');
 
     useEffect(() => {
         socket.on('hand', (h) => setHand(h));
         socket.on('players', (p) => setPlayers(p));
         socket.on('claimMade', (c) => {
-            setLastClaim(c);
+            setLastClaimHistory(prev => [...prev, c]); // append to history
             alert(`Player made claim: ${c.combo}`);
         });
         socket.on('bsResult', (r) => alert(`BS result: player ${r.loserId} drew a card`));
 
-        // Assume server sends back your username after join
+        // Receive username after joining
         socket.on('yourName', (name) => setUserName(name));
 
         return () => {
@@ -56,7 +56,7 @@ function Game({ socket }) {
                     onChange={e => setClaim(e.target.value)}
                     onKeyDown={handleKeyDown}
                     placeholder="Combo claim"
-                    style={{ padding: '8px', fontSize: '16px', width: '200px' }}
+                    style={{ padding: '8px', fontSize: '16px', width: '600px' }}
                 />
                 <button onClick={makeClaim} style={{ padding: '8px 16px', marginLeft: '10px', fontSize: '16px' }}>
                     Make Claim
@@ -86,14 +86,37 @@ function Game({ socket }) {
                     </ul>
                 </div>
 
-                {/* Last Claim */}
-                <div style={{ border: '2px solid #333', padding: '15px', flexGrow: 1, minHeight: '200px', backgroundColor: '#f9f9f9' }}>
-                    <h4>Last Claim Made</h4>
-                    {lastClaim ? (
-                        <div>
-                            <p><strong>Player:</strong> {lastClaim.claimantName}</p>
-                            <p><strong>Combo:</strong> {lastClaim.combo}</p>
-                        </div>
+                {/* Claim Log */}
+                <div
+                    style={{
+                        border: '2px solid #333',
+                        padding: '10px',
+                        flexGrow: 1,
+                        minHeight: '200px',
+                        maxHeight: '400px',
+                        backgroundColor: '#f9f9f9',
+                        overflowY: 'auto',
+                        display: 'flex',
+                        flexDirection: 'column',
+                        gap: '8px'
+                    }}
+                >
+                    <h4>Claim Log</h4>
+                    {lastClaimHistory.length > 0 ? (
+                        lastClaimHistory.map((c, idx) => (
+                            <div
+                                key={idx}
+                                style={{
+                                    border: '1px solid #ccc',
+                                    borderRadius: '6px',
+                                    padding: '8px',
+                                    backgroundColor: '#fff',
+                                    fontSize: '14px'
+                                }}
+                            >
+                                <strong>{c.claimantName}</strong>: {c.combo}
+                            </div>
+                        ))
                     ) : (
                         <p>No claims yet.</p>
                     )}
