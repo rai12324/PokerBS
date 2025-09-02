@@ -1,4 +1,4 @@
-const { convertCardString, getCurrentPool } = require('./utility'); // adjust path if needed
+const { convertCardString, getCurrentPool, claimExistsInPool } = require('./utility'); // adjust path if needed
 
 class Game {
     constructor() {
@@ -42,13 +42,12 @@ class Game {
     }
 
     makeClaim(playerId, combo) {
-        // For prototype, randomly decide if claim is truthful
-        //const truth = Math.random() < 0.6;
-
-        // calculate truth
+        // Note: [truth = 1] <- the claim was valid | [truth = 0] <- the claim was invalid
+        
         let truth;
         try {
-            truth = convertCardString(combo);
+            // truth = convertCardString(combo);
+            truth = claimExistsInPool(combo, this.players, this.pot);
         } catch (e) {
             console.error("Invalid combo: ", combo);
             truth = null;
