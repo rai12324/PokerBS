@@ -1,6 +1,7 @@
 const express = require('express');
 const http = require('http');
 const { Server } = require('socket.io');
+const path = require('path');
 const Game = require('./game');
 
 const app = express();
@@ -9,20 +10,20 @@ const io = new Server(server, { cors: { origin: '*' } });
 
 let game = new Game();
 
-// function logDebugState() {
-//     console.log("=== GAME STATE ===");
-//     console.dir(game.getDebugState(), { depth: null });
-//     console.log("==================");
-// }
+// ✅ serve static files from /public (debug.html, debug.css, debug.js)
+app.use(express.static(path.join(__dirname, 'public')));
 
-// Debug endpoint in browser
+// ✅ serve the debug page
 app.get('/debug', (req, res) => {
-    res.send(`
-        <h1>Game Debug State</h1>
-        <pre>${JSON.stringify(game.getDebugState(), null, 2)}</pre>
-    `);
+    res.sendFile(path.join(__dirname, 'public', 'debug.html'));
 });
 
+// ✅ JSON endpoint for game state (used by debug.js)
+app.get('/debug/state', (req, res) => {
+    res.json(game.getDebugState());
+});
+
+// --- Socket.io setup ---
 io.on('connection', (socket) => {
     console.log('a user connected:', socket.id);
 
@@ -31,21 +32,18 @@ io.on('connection', (socket) => {
         const player = game.addPlayer(socket.id, name);
         socket.emit('hand', player.hand);
         io.emit('players', game.getPlayerStatus());
-        // logDebugState();
     });
 
     // Player makes a claim
     socket.on('claim', (combo) => {
         const result = game.makeClaim(socket.id, combo);
         io.emit('claimMade', result);
-        // logDebugState();
     });
 
     // Player calls BS on a claim
     socket.on('callBS', (claimantId) => {
         const result = game.callBS(socket.id, claimantId);
         io.emit('bsResult', result);
-        // logDebugState();
     });
 
     socket.on('disconnect', () => {
@@ -55,6 +53,7 @@ io.on('connection', (socket) => {
     });
 });
 
+// Start server
 server.listen(3001, () => {
     console.log('Server listening on port 3001');
     console.log('Debug state available at http://localhost:3001/debug');
