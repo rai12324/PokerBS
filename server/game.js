@@ -132,6 +132,8 @@ class Game {
 
         this.redealHands(loserId);
 
+        this.continueGameIfNeeded();
+
         return {
             loserId,
             hands: this.players.map(p => ({
@@ -157,6 +159,17 @@ class Game {
             claims: this.claims,
             currentPool
         };
+    }
+
+    continueGameIfNeeded() {
+        // Check if there are still active players
+        const activePlayers = this.players.filter(p => p.active);
+        
+        // If no active players, do nothing (everyone is a spectator)
+        if (activePlayers.length === 0) return;
+
+        // Otherwise, start next round
+        this.redealHands();  // no loser, just redeal for next round
     }
 }
 
