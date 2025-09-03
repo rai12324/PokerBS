@@ -7,10 +7,16 @@ function Game({ socket }) {
   const [claim, setClaim] = useState('');
   const [lastClaimHistory, setLastClaimHistory] = useState([]);
   const [userName, setUserName] = useState('');
+  const [isActive, setIsActive] = useState(true); // 👈 track if YOU are active
 
   useEffect(() => {
     socket.on('hand', (h) => setHand(h));
-    socket.on('players', (p) => setPlayers(p));
+    socket.on('players', (p) => {
+      setPlayers(p);
+      // update own active status
+      const me = p.find(pl => pl.id === socket.id);
+      if (me) setIsActive(me.active);
+    });
     socket.on('claimMade', (c) => {
       setLastClaimHistory(prev => [...prev, c]);
       alert(`Player made claim: ${c.combo}`);
@@ -25,7 +31,11 @@ function Game({ socket }) {
       });
 
       if (newHands[socket.id]) setHand(newHands[socket.id]);
-      if (r.playerStatus) setPlayers(r.playerStatus);
+      if (r.playerStatus) {
+        setPlayers(r.playerStatus);
+        const me = r.playerStatus.find(pl => pl.id === socket.id);
+        if (me) setIsActive(me.active);
+      }
 
       setLastClaimHistory([]);
     });
@@ -58,18 +68,22 @@ function Game({ socket }) {
   return (
     <div>
       {/* Top Bar */}
-      <div className="top-bar">Logged in as: {userName}</div>
-
-      {/* Claim input */}
-      <div className="claim-input">
-        <input
-          value={claim}
-          onChange={e => setClaim(e.target.value)}
-          onKeyDown={handleKeyDown}
-          placeholder="Combo claim"
-        />
-        <button onClick={makeClaim}>Make Claim</button>
+      <div className="top-bar">
+        Logged in as: {userName} {isActive ? '' : '(Spectator)'}
       </div>
+
+      {/* Claim input (only for active players) */}
+      {isActive && (
+        <div className="claim-input">
+          <input
+            value={claim}
+            onChange={e => setClaim(e.target.value)}
+            onKeyDown={handleKeyDown}
+            placeholder="Combo claim"
+          />
+          <button onClick={makeClaim}>Make Claim</button>
+        </div>
+      )}
 
       {/* Main Content */}
       <div className="main-content">
@@ -88,11 +102,33 @@ function Game({ socket }) {
           <h4>Players</h4>
           <ul style={{ listStyle: 'none', padding: 0 }}>
             {players.map(p => (
-              <li key={p.id} style={{ marginBottom: '8px' }}>
+              <li
+                key={p.id}
+                style={{
+                  marginBottom: '8px',
+                  opacity: p.active ? 1 : 0.5
+                }}
+              >
                 {p.name} ({p.cards} cards)
-                <button onClick={() => callBS(p.id)} style={{ marginLeft: '5px' }}>
-                  Call BS
-                </button>
+                {/* 👇 BS button only appears if YOU are active AND the target is active */}
+                {isActive && p.active ? (
+                  <button
+                    onClick={() => callBS(p.id)}
+                    style={{ marginLeft: '5px' }}
+                  >
+                    Call BS
+                  </button>
+                ) : (
+                  <span
+                    style={{
+                      marginLeft: '5px',
+                      fontStyle: 'italic',
+                      color: '#888'
+                    }}
+                  >
+                    {p.active ? '' : 'Spectator'}
+                  </span>
+                )}
               </li>
             ))}
           </ul>

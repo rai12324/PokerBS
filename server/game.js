@@ -38,10 +38,20 @@ class Game {
     }
 
     getPlayerStatus() {
-        return this.players.map(p => ({id: p.id, name: p.name, cards: p.hand.length, active: p.active}));
+        return this.players.map(p => ({
+            id: p.id,
+            name: p.name,
+            cards: p.hand.length,
+            active: p.active
+        }));
     }
 
     makeClaim(playerId, combo) {
+        const player = this.players.find(p => p.id === playerId);
+        if (!player || !player.active){
+            return { error: 'Inactive players cannot make claims' }
+        }
+
         let truth;
         try {
             truth = claimExistsInPool(combo, this.players, this.pot);
@@ -50,7 +60,7 @@ class Game {
             truth = null;
         }
 
-        const player = this.players.find(p => p.id === playerId);
+        // const player = this.players.find(p => p.id === playerId);
 
         const claim = {
             claimantId: playerId,
@@ -80,6 +90,8 @@ class Game {
 
         // 4. Deal minimum 2 cards per player
         for (let player of this.players) {
+            if (!player.active) continue;
+
             while (player.hand.length < player.minHandSize && this.deck.length > 0) {
                 player.hand.push(this.deck.pop());
             }
@@ -103,20 +115,21 @@ class Game {
     }
 
     callBS(callerId, claimantId) {
+        const caller = this.players.find(p => p.id === callerId);
+        if (!caller || !caller.active) {
+            return { error: 'Inactive players cannot call BS' };
+        }
+
         const claim = this.claims.find(c => c.claimantId === claimantId);
         if (!claim) return { error: 'No claim found' };
 
-        // Determine loser carefully
         let loserId;
         if (claim.truth === true) {
-            // Claim was true → caller loses
             loserId = callerId;
         } else {
-            // Claim was false or invalid → claimant loses
             loserId = claimantId;
         }
 
-        // Redeal all hands, giving extra card to loser
         this.redealHands(loserId);
 
         return {
@@ -128,7 +141,6 @@ class Game {
         };
     }
 
-    // inside Game class
     getDebugState() {
         const currentPool = getCurrentPool(this.players, this.pot);
 
