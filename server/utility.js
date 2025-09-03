@@ -1,12 +1,28 @@
 // utility.js
 function convertCardString(cardStr) {
+    // const number_map = {
+    //     "one": "1", "two": "2", "three": "3", "four": "4",
+    //     "five": "5", "six": "6", "seven": "7", "eight": "8",
+    //     "nine": "9", "ten": "10", "jack": "J", "queen": "Q", "king": "K", "ace": "A"
+    // };
+
     const number_map = {
         "one": "1", "two": "2", "three": "3", "four": "4",
         "five": "5", "six": "6", "seven": "7", "eight": "8",
-        "nine": "9", "ten": "10", "jack": "J", "queen": "Q", "king": "K", "ace": "A"
+        "nine": "9", "ten": "10", "eleven": "11", "twelve": "12",
+        "thirteen": "13", "fourteen": "14", "fifteen": "15",
+        "sixteen": "16"
     };
+
+    // const suit_map = {
+    //     "hearts": "H", "diamonds": "D", "clubs": "C", "spades": "S"
+    // };
+
     const suit_map = {
-        "hearts": "H", "diamonds": "D", "clubs": "C", "spades": "S"
+        "hearts": "H", "heart": "H",
+        "diamonds": "D", "diamond": "D",
+        "clubs": "C", "club": "C",
+        "spades": "S", "spade": "S"
     };
 
     const parts = cardStr.toLowerCase().split(' ');
@@ -39,7 +55,7 @@ function claimExistsInPool(claimStr, players, pot) {
     const currentPool = getCurrentPool(players, pot).split(" "); // array of cards
     console.log("From getCurrentPool: ", currentPool);
 
-    // Count suits in pool
+    // Count occurence of suits in pool
     const suitCounts = {};
     currentPool.forEach(card => {
         const suit = card.slice(-1); // last character is the suit
