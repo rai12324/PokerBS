@@ -1,11 +1,5 @@
 // utility.js
 function convertCardString(cardStr) {
-    // const number_map = {
-    //     "one": "1", "two": "2", "three": "3", "four": "4",
-    //     "five": "5", "six": "6", "seven": "7", "eight": "8",
-    //     "nine": "9", "ten": "10", "jack": "J", "queen": "Q", "king": "K", "ace": "A"
-    // };
-
     const number_map = {
         "one": "1", "two": "2", "three": "3", "four": "4",
         "five": "5", "six": "6", "seven": "7", "eight": "8",
@@ -14,9 +8,12 @@ function convertCardString(cardStr) {
         "sixteen": "16"
     };
 
-    // const suit_map = {
-    //     "hearts": "H", "diamonds": "D", "clubs": "C", "spades": "S"
-    // };
+    const hand_type_map = {
+        "pair": "2",
+        "triple": "3",
+        "quad": "4",
+        "flush": "5"
+    };
 
     const suit_map = {
         "hearts": "H", "heart": "H",
@@ -25,14 +22,19 @@ function convertCardString(cardStr) {
         "spades": "S", "spade": "S"
     };
 
+    cardStr = cardStr.toLowerCase().replace(/card flush/g, "");
     const parts = cardStr.toLowerCase().split(' ');
     let claim = "";
 
     for (const part of parts) {
         if (number_map[part])
             claim = claim + number_map[part];
+        else if (hand_type_map[part])
+            claim = claim + hand_type_map[part];
         else if(suit_map[part])
             claim = claim + suit_map[part] + ' ';
+        else
+            continue;
     }
 
     console.log("In convertCardString: ", claim);
