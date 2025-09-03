@@ -1,0 +1,31 @@
+1. Make it so that I can run the code fine with typing in numbers ('1') instead of ('one')
+    -> EX: "one heart" -> "1 heart"
+2. Implement Royal Flush?
+3. Implement logic for straights
+4. Implement logic for multiple of a kind
+    -> EX: "3 2s" or "three 2s"
+5. Make it so that the game does not let a user place a claim until the person above them in queue has.
+    -> If players all have two cards randomly decide who to start.
+    -> Once player has lost, they start next round
+        -> If player lost and out of game, next person to them starts next round
+6. Make sure the claim is valid and if not have user reenter
+7. Make it so server has access to each round played
+8. Display the entire pot after each round is over before starting next round
+9. Spectators can view pot and view hands of players currently active
+10. Add reset game button
+    -> a master button in the server tab
+    -> a button in the client window where majority need to agree before reset
+11. Add help window
+12. Add card ui for players (Displays cards not just letter '5C')
+13. Implement Jokers
+14. Implement 'Ace to Ace'
+    -> Automatic win
+15. Implement 'Ace to King'
+    -> Lose a card in hand
+16. Creation of lobbies
+    -> able to customize how many cards in pot
+    -> able to customize how many max cards and initial cards in hand
+17. Make claims box for clients scrollable and only display 5 claims made
+18. Publish game to website
+19. Make / Train AI opponent
+
