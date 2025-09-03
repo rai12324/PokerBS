@@ -75,13 +75,23 @@ function Game({ socket }) {
       {/* Claim input (only for active players) */}
       {isActive && (
         <div className="claim-input">
-          <input
+            <input
             value={claim}
             onChange={e => setClaim(e.target.value)}
             onKeyDown={handleKeyDown}
             placeholder="Combo claim"
-          />
-          <button onClick={makeClaim}>Make Claim</button>
+            />
+            <button onClick={makeClaim}>Make Claim</button>
+
+            {/* One global BS button */}
+            {lastClaimHistory.length > 0 && (
+            <button
+                onClick={() => socket.emit('callBS')}
+                style={{ marginLeft: '10px', background: 'red', color: 'white' }}
+            >
+                Call BS
+            </button>
+            )}
         </div>
       )}
 
@@ -99,39 +109,31 @@ function Game({ socket }) {
 
         {/* Players */}
         <div className="section players-section">
-          <h4>Players</h4>
-          <ul style={{ listStyle: 'none', padding: 0 }}>
+        <h4>Players</h4>
+        <ul style={{ listStyle: 'none', padding: 0 }}>
             {players.map(p => (
-              <li
+            <li
                 key={p.id}
                 style={{
-                  marginBottom: '8px',
-                  opacity: p.active ? 1 : 0.5
+                marginBottom: '8px',
+                opacity: p.active ? 1 : 0.5
                 }}
-              >
+            >
                 {p.name} ({p.cards} cards)
-                {/* 👇 BS button only appears if YOU are active AND the target is active */}
-                {isActive && p.active ? (
-                  <button
-                    onClick={() => callBS(p.id)}
-                    style={{ marginLeft: '5px' }}
-                  >
-                    Call BS
-                  </button>
-                ) : (
-                  <span
+                {!p.active && (
+                <span
                     style={{
-                      marginLeft: '5px',
-                      fontStyle: 'italic',
-                      color: '#888'
+                    marginLeft: '5px',
+                    fontStyle: 'italic',
+                    color: '#888'
                     }}
-                  >
-                    {p.active ? '' : 'Spectator'}
-                  </span>
+                >
+                    Spectator
+                </span>
                 )}
-              </li>
+            </li>
             ))}
-          </ul>
+        </ul>
         </div>
 
         {/* Claim Log */}

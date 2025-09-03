@@ -114,24 +114,25 @@ class Game {
         this.claims = [];
     }
 
-    callBS(callerId, claimantId) {
+    callBS(callerId) {
         const caller = this.players.find(p => p.id === callerId);
         if (!caller || !caller.active) {
             return { error: 'Inactive players cannot call BS' };
         }
 
-        const claim = this.claims.find(c => c.claimantId === claimantId);
-        if (!claim) return { error: 'No claim found' };
+        const lastClaim = this.claims[this.claims.length - 1];
+        if (!lastClaim) return { error: 'No claim to call BS on' };
+
+        const claimantId = lastClaim.claimantId; // 👈 only this line
 
         let loserId;
-        if (claim.truth === true) {
+        if (lastClaim.truth === true) {
             loserId = callerId;
         } else {
             loserId = claimantId;
         }
 
         this.redealHands(loserId);
-
         this.continueGameIfNeeded();
 
         return {
@@ -139,6 +140,12 @@ class Game {
             hands: this.players.map(p => ({
                 id: p.id,
                 hand: p.hand
+            })),
+            playerStatus: this.players.map(p => ({
+                id: p.id,
+                name: p.name,
+                active: p.active,
+                cards: p.hand.length
             }))
         };
     }
@@ -170,6 +177,11 @@ class Game {
 
         // Otherwise, start next round
         this.redealHands();  // no loser, just redeal for next round
+    }
+
+    getLastClaimant() {
+        if (this.claims.length === 0) return null;
+        return this.claims[this.claims.length - 1].claimantId;
     }
 }
 
