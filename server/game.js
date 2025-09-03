@@ -28,7 +28,7 @@ class Game {
 
     addPlayer(id, name) {
         const hand = this.drawCards(2);
-        const player = { id: id.toString(), name, hand, active: true };
+        const player = { id: id.toString(), name, hand, active: true, minHandSize: 2 };
         this.players.push(player);
         return player;
     }
@@ -106,7 +106,7 @@ class Game {
 
         // 4. Deal minimum 2 cards per player
         for (let player of this.players) {
-            while (player.hand.length < 2 && this.deck.length > 0) {
+            while (player.hand.length < player.minHandSize && this.deck.length > 0) {
                 player.hand.push(this.deck.pop());
             }
             player.active = player.hand.length < 5;
@@ -115,8 +115,15 @@ class Game {
         // 5. Give extra card to the loser
         if (extraForLoserId) {
             const loser = this.players.find(p => p.id === extraForLoserId);
-            if (loser && this.deck.length > 0) {
-                loser.hand.push(this.deck.pop());
+            // if (loser && this.deck.length > 0) {
+            //     loser.hand.push(this.deck.pop());
+            //     loser.active = loser.hand.length < 5;
+            // }
+            if (loser) {
+                loser.minHandSize += 1;
+                if (loser.hand.length < loser.minHandSize && this.deck.length > 0) {
+                    loser.hand.push(this.deck.pop());
+                }
                 loser.active = loser.hand.length < 5;
             }
         }
@@ -161,7 +168,8 @@ class Game {
                 id: p.id,
                 name: p.name,
                 hand: p.hand.map(c => `${c.rank}${c.suit}`),
-                active: p.active
+                active: p.active,
+                minHandSize: p.minHandSize
             })),
             pot: this.pot.map(c => `${c.rank}${c.suit}`),
             deckCount: this.deck.length,
