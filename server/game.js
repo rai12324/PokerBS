@@ -42,10 +42,6 @@ class Game {
     }
 
     makeClaim(playerId, combo) {
-        // Note: [truth = 1] <- the claim was valid | [truth = 0] <- the claim was invalid
-        // console.log('makeClaim called with playerId:', playerId);
-        // console.log('Current players:', this.players);
-
         let truth;
         try {
             truth = claimExistsInPool(combo, this.players, this.pot);
@@ -55,7 +51,6 @@ class Game {
         }
 
         const player = this.players.find(p => p.id === playerId);
-        // console.log('Found player:', player);
 
         const claim = {
             claimantId: playerId,
@@ -67,36 +62,15 @@ class Game {
         return claim;
     }
 
-    // // New method: redeal all players' hands
-    // redealHands(extraForLoserId = null) {
-    //     // Reset deck + pot
-    //     this.deck = this.createDeck();
-    //     this.pot = this.drawCards(3);
-
-    //     // Redeal hands
-    //     for (let player of this.players) {
-    //         player.hand = this.drawCards(2);
-    //         player.active = true; // reset active status
-    //     }
-
-    //     // Give extra card to the loser
-    //     if (extraForLoserId) {
-    //         const loser = this.players.find(p => p.id === extraForLoserId);
-    //         if (loser && this.deck.length > 0) {
-    //             loser.hand.push(this.deck.pop());
-    //         }
-    //     }
-
-    //     // Clear claims for new round
-    //     this.claims = [];
-    // }
-
     redealHands(extraForLoserId = null) {
-        // 1. Collect all player hands into the deck
+        // 1. Collect all player hands and pot into the deck
         for (let player of this.players) {
             this.deck.push(...player.hand);
             player.hand = [];
         }
+
+        this.deck.push(...this.pot);
+        this.pot = [];
 
         // 2. Shuffle the deck
         this.deck = this.shuffle(this.deck);
@@ -115,10 +89,6 @@ class Game {
         // 5. Give extra card to the loser
         if (extraForLoserId) {
             const loser = this.players.find(p => p.id === extraForLoserId);
-            // if (loser && this.deck.length > 0) {
-            //     loser.hand.push(this.deck.pop());
-            //     loser.active = loser.hand.length < 5;
-            // }
             if (loser) {
                 loser.minHandSize += 1;
                 if (loser.hand.length < loser.minHandSize && this.deck.length > 0) {
@@ -153,7 +123,6 @@ class Game {
             loserId,
             hands: this.players.map(p => ({
                 id: p.id,
-                //hand: p.hand.map(c => `${c.rank}${c.suit}`) 
                 hand: p.hand
             }))
         };
