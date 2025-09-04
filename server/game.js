@@ -68,6 +68,8 @@ class Game {
             combo,
             truth
         };
+
+        console.log("claim: ", claim);
         this.claims.push(claim);
         return claim;
     }

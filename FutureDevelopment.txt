@@ -28,4 +28,7 @@
 17. Make claims box for clients scrollable and only display 5 claims made
 18. Publish game to website
 19. Make / Train AI opponent
+20. Implement probability scale
+    -> users can see how likely a claim is
+    -> spectators can see if the claim exists in the pool
 
