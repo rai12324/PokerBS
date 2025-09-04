@@ -164,34 +164,4 @@ function claimExistsInPool(claimStr, players, pot) {
     }
 }
 
-// function claimExistsInPool(claimStr, players, pot) {
-//     // Return 1 if yay | Return 0 if nay
-
-//     const claimedCards = convertCardString(claimStr).split(" "); // array of claimed cards
-//     console.log("From claimExistsInPool: ", claimedCards);
-
-//     const currentPool = getCurrentPool(players, pot).split(" "); // array of cards
-//     console.log("From getCurrentPool: ", currentPool);
-
-//     // Count occurence of suits in pool
-//     const suitCounts = {};
-//     currentPool.forEach(card => {
-//         const suit = card.slice(-1); // last character is the suit
-//         suitCounts[suit] = (suitCounts[suit] || 0) + 1;
-//     });
-//     console.log("suitCounts: ", suitCounts);
-
-//     const occurence = {};
-//     claimedCards.forEach(card => {
-//         const value = card.slice(0, -1);
-//         const suit = card.slice(-1); // last character is the suit
-//         occurence[suit] = value;
-//     });
-//     console.log("occurence: ", occurence);
-
-//     return Object.entries(occurence).every(([key, value]) => {
-//         return Number(value) <= (suitCounts[key] || 0);
-//     });
-// }
-
 module.exports = { convertCardString, getCurrentPool, claimExistsInPool };

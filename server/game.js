@@ -125,7 +125,7 @@ class Game {
         const lastClaim = this.claims[this.claims.length - 1];
         if (!lastClaim) return { error: 'No claim to call BS on' };
 
-        const claimantId = lastClaim.claimantId; // 👈 only this line
+        const claimantId = lastClaim.claimantId;
 
         let loserId;
         if (lastClaim.truth === true) {

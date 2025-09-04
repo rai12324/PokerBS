@@ -19,11 +19,16 @@ function Game({ socket }) {
     });
     socket.on('claimMade', (c) => {
       setLastClaimHistory(prev => [...prev, c]);
-      alert(`Player made claim: ${c.combo}`);
+      // alert(`Player made claim: ${c.combo}`);
+      alert(`Player ${c.claimantName} made claim: ${c.combo}`);
     });
 
     socket.on('bsResult', (r) => {
-      alert(`BS result: player ${r.loserId} got extra card!`);
+      // alert(`BS result: player ${r.loserId} got extra card!`);
+      const loser = (r.playerStatus || players).find(pl => pl.id === r.loserId);
+      const loserName = loser ? loser.name : r.loserId;
+
+      alert(`BS result: player ${loserName} got an extra card!`);
 
       const newHands = {};
       r.hands.forEach(h => {
