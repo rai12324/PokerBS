@@ -1,26 +1,33 @@
 // utility.js
 function wordToNumber(word) {
     const map = {
-        one: 1,
-        two: 2,
-        three: 3,
-        four: 4,
-        five: 5,
-        six: 6,
-        seven: 7,
-        eight: 8,
-        nine: 9,
-        ten: 10,
-        eleven: 11,
-        twelve: 12,
-        thirteen: 13,
-        fourteen: 14,
-        fifteen: 15,
-        sixteen: 16,
-        seventeen: 17,
-        eighteen: 18
+        one: 1, 1:1,
+        two: 2, 2:2,
+        three: 3, 3:3,
+        four: 4, 4:4,
+        five: 5, 5:5,
+        six: 6, 6:6,
+        seven: 7, 7:7,
+        eight: 8, 8:8,
+        nine: 9, 9:9,
+        ten: 10, 10:10,
+        eleven: 11, 11:11,
+        twelve: 12, 12:12,
+        thirteen: 13, 13:13,
+        fourteen: 14, 14:14,
+        fifteen: 15, 15:15,
+        sixteen: 16, 16:16,
+        seventeen: 17, 17:17,
+        eighteen: 18, 18:18
     };
     return map[word.toLowerCase()] || null;
+}
+
+function wordOrNumberToValue(token, number_map) {
+    if (!isNaN(token)) {
+        return parseInt(token, 10);   // handle "2", "10", etc.
+    }
+    return number_map[token.toLowerCase()] || null;
 }
 
 function parseClaim(cardStr) {
@@ -37,8 +44,8 @@ function parseClaim(cardStr) {
     // Match "straight flush ace to five" or "straight flush ace through five"
     let match = cardStr.match(/straight\s+flush\s+(\w+)\s+(?:to|through)\s+(\w+)/);
     if (match) {
-        const start = number_map[match[1]];
-        const end = number_map[match[2]];
+        const start = wordOrNumberToValue(match[1], number_map);
+        const end = wordOrNumberToValue(match[2], number_map);
         if (!start || !end) return null;
         return { type: "straight_flush", range: [start, end] };
     }
@@ -46,8 +53,8 @@ function parseClaim(cardStr) {
     // Match "flush ace to five" or "flush ace through five"
     match = cardStr.match(/flush\s+(\w+)\s+(?:to|through)\s+(\w+)/);
     if (match) {
-        const start = number_map[match[1]];
-        const end = number_map[match[2]];
+        const start = wordOrNumberToValue(match[1], number_map);
+        const end = wordOrNumberToValue(match[2], number_map);
         if (!start || !end) return null;
         return { type: "straight_flush", range: [start, end] };
     }
@@ -55,8 +62,8 @@ function parseClaim(cardStr) {
     // Match "ace to five flush" or "ace through five flush"
     match = cardStr.match(/(\w+)\s+(?:to|through)\s+(\w+)\s+flush/);
     if (match) {
-        const start = number_map[match[1]];
-        const end = number_map[match[2]];
+        const start = wordOrNumberToValue(match[1], number_map);
+        const end = wordOrNumberToValue(match[2], number_map);
         if (!start || !end) return null;
         return { type: "straight_flush", range: [start, end] };
     }
@@ -64,8 +71,8 @@ function parseClaim(cardStr) {
     // Match "straight flush from ace to five" or "straight from ace through five"
     match = cardStr.match(/straight\s+flush\s+(?:from\s+)?(\w+)\s+(?:to|through)\s+(\w+)/);
     if (match) {
-        const start = number_map[match[1]];
-        const end = number_map[match[2]];
+        const start = wordOrNumberToValue(match[1], number_map);
+        const end = wordOrNumberToValue(match[2], number_map);
         if (!start || !end) return null;
         return { type: "straight_flush", range: [start, end] };
     }
@@ -85,8 +92,8 @@ function parseClaim(cardStr) {
     // Match "straight from ace to five" or "straight from ace through five"
     match = cardStr.match(/straight\s+from\s+(\w+)\s+(?:to|through)\s+(\w+)/);
     if (match) {
-        const start = number_map[match[1]];
-        const end = number_map[match[2]];
+        const start = wordOrNumberToValue(match[1], number_map);
+        const end = wordOrNumberToValue(match[2], number_map);
         if (!start || !end) return null;
         return { type: "straight", range: [start, end] };
     }
@@ -94,8 +101,8 @@ function parseClaim(cardStr) {
     // Match "straight ace to five" or "straight ace through five"
     match = cardStr.match(/straight\s+(\w+)\s+(?:to|through)\s+(\w+)/);
     if (match) {
-        const start = number_map[match[1]];
-        const end = number_map[match[2]];
+        const start = wordOrNumberToValue(match[1], number_map);
+        const end = wordOrNumberToValue(match[2], number_map);
         if (!start || !end) return null;
         return { type: "straight", range: [start, end] };
     }
@@ -103,8 +110,8 @@ function parseClaim(cardStr) {
     // Match "ace to nine" or "2 through 6"
     match = cardStr.match(/(\w+)\s+(?:to|through)\s+(\w+)/);
     if (match) {
-        const start = number_map[match[1]];
-        const end = number_map[match[2]];
+        const start = wordOrNumberToValue(match[1], number_map);
+        const end = wordOrNumberToValue(match[2], number_map);
         if (!start || !end) return null;
         return { type: "straight", range: [start, end] };
     }
@@ -112,8 +119,8 @@ function parseClaim(cardStr) {
     // Match "ace to five straight" or "ace through five straight"
     match = cardStr.match(/(\w+)\s+(?:to|through)\s+(\w+)\s+straight/);
     if (match) {
-        const start = number_map[match[1]];
-        const end = number_map[match[2]];
+        const start = wordOrNumberToValue(match[1], number_map);
+        const end = wordOrNumberToValue(match[2], number_map);
         if (!start || !end) return null;
         return { type: "straight_flush", range: [start, end] };
     }
@@ -155,7 +162,7 @@ function convertCardString(cardStr) {
     const hand_type_map = {
         "single": "1",
         "pair": "2",
-        "triple": "3", "trio": "3",
+        "triple": "3", "trio": "3", "trip": "3",
         "quad": "4",
         "flush": "5"
     };
