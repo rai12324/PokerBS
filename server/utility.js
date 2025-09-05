@@ -1,4 +1,28 @@
 // utility.js
+function wordToNumber(word) {
+    const map = {
+        one: 1,
+        two: 2,
+        three: 3,
+        four: 4,
+        five: 5,
+        six: 6,
+        seven: 7,
+        eight: 8,
+        nine: 9,
+        ten: 10,
+        eleven: 11,
+        twelve: 12,
+        thirteen: 13,
+        fourteen: 14,
+        fifteen: 15,
+        sixteen: 16,
+        seventeen: 17,
+        eighteen: 18
+    };
+    return map[word.toLowerCase()] || null;
+}
+
 function parseClaim(cardStr) {
     const number_map = {
         "ace": 1, "two": 2, "three": 3, "four": 4,
@@ -109,6 +133,13 @@ function parseClaim(cardStr) {
     // }
 
     // ----------------------- DETECT FLUSH ----------------------
+    // Match flush with number of cards (e.g. "six card flush")
+    match = cardStr.match(/(\w+)\s+card\s+flush/);
+    if (match) {
+        const length = wordToNumber(match[1]);
+        return { type: "flush", length };
+    }
+
     return { type: "flush", value: convertCardString(cardStr) };
 }
 
@@ -122,6 +153,7 @@ function convertCardString(cardStr) {
     };
 
     const hand_type_map = {
+        "single": "1",
         "pair": "2",
         "triple": "3", "trio": "3",
         "quad": "4",
@@ -284,6 +316,15 @@ function claimExistsInPool(claimStr, players, pot) {
 
     // ----------------------- FLUSH -----------------------
     if (parsed.type === "flush") {
+        if (parsed.length) {
+            // Case: "six card flush"
+            const suitCounts = {};
+            currentPool.forEach(card => {
+                const suit = card.slice(-1);
+                suitCounts[suit] = (suitCounts[suit] || 0) + 1;
+            });
+            return Object.values(suitCounts).some(count => count >= parsed.length);
+        }
         if (parsed.suit) {
             // Case: "flush of clubs"
             const count = currentPool.filter(card => card.slice(-1) === parsed.suit).length;
