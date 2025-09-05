@@ -64,18 +64,12 @@ class Game {
     }
 
     makeClaim(playerId, combo) {
-        // const player = this.players.find(p => p.id === playerId);
         const player = this.players.find((p, idx) => idx === this.currentTurnIndex);
-        // const player = this.players[this.currentTurnIndex];
         // Only the currentTurn player can act
         if (!player || player.id !== playerId)
             return { error: "It's not your turn" };
         if (!player.active)
             return { error: 'Inactive players cannot make claims' };
-
-        // if (!player || !player.active){
-        //     return { error: 'Inactive players cannot make claims' }
-        // }
 
         let truth;
         try {

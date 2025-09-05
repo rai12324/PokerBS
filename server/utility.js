@@ -9,47 +9,96 @@ function parseClaim(cardStr) {
 
     cardStr = cardStr.toLowerCase().trim();
 
-    // Match "straight from ace to five" or "straight from ace through five"
-    let match = cardStr.match(/straight\s+from\s+(\w+)\s+(?:to|through)\s+(\w+)/);
-    if (!match) {
-        // Match "straight ace to five" or "straight ace through five"
-        match = cardStr.match(/straight\s+(\w+)\s+(?:to|through)\s+(\w+)/);
-    }
-
-    console.log("1. parseClaim -> match = ", match);
-
-    if (match) {
-        console.log("In the if(match) block");
-        const startWord = match[1];
-        const endWord = match[2];
-        const start = number_map[startWord];
-        const end = number_map[endWord];
-
-        console.log("startWord [", startWord, "] endWord [", endWord, "] start [", start, "] end [", end, "]"); // works
-        
-        if (!start || !end) {
-            console.warn("Invalid straight claim:", cardStr);
-            return null;
-        }
-
-        return { type: "straight", range: [start, end] };
-    }
-
-    // Implicit straight: "ace to nine" / "2 through 6"
-    match = cardStr.match(/(\w+)\s+(?:to|through)\s+(\w+)/);
-    console.log("2. parseClaim -> match = ", match);
+    // ------------------ DETECT STRAIGHT FLUSH ------------------
+    // Match "straight flush ace to five" or "straight flush ace through five"
+    let match = cardStr.match(/straight\s+flush\s+(\w+)\s+(?:to|through)\s+(\w+)/);
     if (match) {
         const start = number_map[match[1]];
         const end = number_map[match[2]];
+        if (!start || !end) return null;
+        return { type: "straight_flush", range: [start, end] };
+    }
 
-        console.log(" start [", start, "] end [", end, "]");
+    // Match "flush ace to five" or "flush ace through five"
+    match = cardStr.match(/flush\s+(\w+)\s+(?:to|through)\s+(\w+)/);
+    if (match) {
+        const start = number_map[match[1]];
+        const end = number_map[match[2]];
+        if (!start || !end) return null;
+        return { type: "straight_flush", range: [start, end] };
+    }
 
+    // Match "ace to five flush" or "ace through five flush"
+    match = cardStr.match(/(\w+)\s+(?:to|through)\s+(\w+)\s+flush/);
+    if (match) {
+        const start = number_map[match[1]];
+        const end = number_map[match[2]];
+        if (!start || !end) return null;
+        return { type: "straight_flush", range: [start, end] };
+    }
+
+    // Match "straight flush from ace to five" or "straight from ace through five"
+    match = cardStr.match(/straight\s+flush\s+(?:from\s+)?(\w+)\s+(?:to|through)\s+(\w+)/);
+    if (match) {
+        const start = number_map[match[1]];
+        const end = number_map[match[2]];
+        if (!start || !end) return null;
+        return { type: "straight_flush", range: [start, end] };
+    }
+
+    // --------------------- DETECT STRAIGHT ---------------------
+    // Match "straight from ace to five" or "straight from ace through five"
+    match = cardStr.match(/straight\s+from\s+(\w+)\s+(?:to|through)\s+(\w+)/);
+    if (match) {
+        const start = number_map[match[1]];
+        const end = number_map[match[2]];
         if (!start || !end) return null;
         return { type: "straight", range: [start, end] };
     }
 
-    // fallback for your old single-card logic...
-    return { type: "card", value: convertCardString(cardStr) };
+    // Match "straight ace to five" or "straight ace through five"
+    match = cardStr.match(/straight\s+(\w+)\s+(?:to|through)\s+(\w+)/);
+    if (match) {
+        const start = number_map[match[1]];
+        const end = number_map[match[2]];
+        if (!start || !end) return null;
+        return { type: "straight", range: [start, end] };
+    }
+
+    // Match "ace to nine" or "2 through 6"
+    match = cardStr.match(/(\w+)\s+(?:to|through)\s+(\w+)/);
+    if (match) {
+        const start = number_map[match[1]];
+        const end = number_map[match[2]];
+        if (!start || !end) return null;
+        return { type: "straight", range: [start, end] };
+    }
+
+    // Match "ace to five straight" or "ace through five straight"
+    match = cardStr.match(/(\w+)\s+(?:to|through)\s+(\w+)\s+straight/);
+    if (match) {
+        const start = number_map[match[1]];
+        const end = number_map[match[2]];
+        if (!start || !end) return null;
+        return { type: "straight_flush", range: [start, end] };
+    }
+
+    // Previous (More efficient way) <- update to this
+    // if (!match) {
+    //     // Match "straight ace to five" or "straight ace through five"
+    //     match = cardStr.match(/straight\s+(\w+)\s+(?:to|through)\s+(\w+)/);
+    // }
+
+    // if (match) {
+    //     console.log("In the if(match) block");
+    //     const start = number_map[match[1]];
+    //     const end = number_map[match[2]];
+    //     if (!start || !end) return null;
+    //     return { type: "straight", range: [start, end] };
+    // }
+
+    // ----------------------- DETECT FLUSH ----------------------
+    return { type: "flush", value: convertCardString(cardStr) };
 }
 
 function convertCardString(cardStr) {
@@ -109,13 +158,38 @@ function claimExistsInPool(claimStr, players, pot) {
 
     if (!parsed) return 0;
 
-    if (parsed.type === "card") {
-            // Return 1 if yay | Return 0 if nay
-            // const claimedCards = convertCardString(claimStr).split(" "); // array of claimed cards
-            const claimedCards = parsed.value.split(" ");
-            console.log("From claimExistsInPool: ", claimedCards);
+    if (parsed.type === "straight_flush") {
+        const [start, end] = parsed.range;
 
-            // const currentPool = getCurrentPool(players, pot).split(" "); // array of cards
+        // Generate needed ranks
+        const needed = [];
+        for (let i = start; i <= end; i++) needed.push(i);
+
+        // Group pool cards by suit
+        const poolBySuit = { H: [], D: [], C: [], S: [] };
+        currentPool.forEach(card => {
+            const rank = card.slice(0, -1);
+            const suit = card.slice(-1);
+            let val;
+            if (rank === "A") val = 1;
+            else if (rank === "J") val = 11;
+            else if (rank === "Q") val = 12;
+            else if (rank === "K") val = 13;
+            else val = Number(rank);
+            poolBySuit[suit].push(val);
+        });
+
+        // Check each suit if it contains all needed ranks
+        return Object.values(poolBySuit).some(ranks =>
+            needed.every(rank => ranks.includes(rank))
+        );
+    }
+
+    if (parsed.type === "flush") {
+            const claimedCards = parsed.value.split(" ");
+
+            // Debug Prints
+            console.log("From claimExistsInPool: ", claimedCards);
             console.log("From getCurrentPool: ", currentPool);
 
             // Count occurence of suits in pool
