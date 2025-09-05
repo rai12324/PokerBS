@@ -6,6 +6,8 @@ class Game {
         this.deck = this.createDeck();
         this.pot = this.drawCards(3);
         this.claims = []; // {claimantId, combo, truth}
+        this.currentTurnIndex = null;
+        this.isFirstRound = true;
     }
 
     createDeck() {
@@ -30,7 +32,22 @@ class Game {
         const hand = this.drawCards(2);
         const player = { id: id.toString(), name, hand, active: true, minHandSize: 2 };
         this.players.push(player);
+
+        if (this.players.length === 1)
+            this.currentTurnIndex = 0;
+
         return player;
+    }
+
+    // Helper: advance turn to next active player
+    advanceTurn() {
+        if (this.players.length === 0) return;
+        let nextIndex = this.currentTurnIndex;
+        do {
+            nextIndex = (nextIndex + 1) % this.players.length;
+        } while (!this.players[nextIndex].active && nextIndex !== this.currentTurnIndex);
+
+        this.currentTurnIndex = nextIndex;
     }
 
     removePlayer(id) {
@@ -47,10 +64,18 @@ class Game {
     }
 
     makeClaim(playerId, combo) {
-        const player = this.players.find(p => p.id === playerId);
-        if (!player || !player.active){
-            return { error: 'Inactive players cannot make claims' }
-        }
+        // const player = this.players.find(p => p.id === playerId);
+        const player = this.players.find((p, idx) => idx === this.currentTurnIndex);
+        // const player = this.players[this.currentTurnIndex];
+        // Only the currentTurn player can act
+        if (!player || player.id !== playerId)
+            return { error: "It's not your turn" };
+        if (!player.active)
+            return { error: 'Inactive players cannot make claims' };
+
+        // if (!player || !player.active){
+        //     return { error: 'Inactive players cannot make claims' }
+        // }
 
         let truth;
         try {
@@ -59,8 +84,6 @@ class Game {
             console.error("Invalid combo: ", combo);
             truth = null;
         }
-
-        // const player = this.players.find(p => p.id === playerId);
 
         const claim = {
             claimantId: playerId,
@@ -71,36 +94,35 @@ class Game {
 
         console.log("claim: ", claim);
         this.claims.push(claim);
+        this.advanceTurn();
         return claim;
     }
 
     redealHands(extraForLoserId = null) {
-        // 1. Collect all player hands and pot into the deck
+        // Collect all player hands and pot into the deck
         for (let player of this.players) {
             this.deck.push(...player.hand);
             player.hand = [];
         }
-
         this.deck.push(...this.pot);
         this.pot = [];
 
-        // 2. Shuffle the deck
+        // Shuffle deck
         this.deck = this.shuffle(this.deck);
 
-        // 3. Draw new pot
+        // Draw new pot
         this.pot = this.drawCards(3);
 
-        // 4. Deal minimum 2 cards per player
+        // Deal min 2 cards per player
         for (let player of this.players) {
             if (!player.active) continue;
-
             while (player.hand.length < player.minHandSize && this.deck.length > 0) {
                 player.hand.push(this.deck.pop());
             }
             player.active = player.hand.length < 5;
         }
 
-        // 5. Give extra card to the loser
+        // Give extra card to loser
         if (extraForLoserId) {
             const loser = this.players.find(p => p.id === extraForLoserId);
             if (loser) {
@@ -112,8 +134,30 @@ class Game {
             }
         }
 
-        // 6. Reset claims
+        // Reset claims
         this.claims = [];
+
+        // Determine current turn
+        if (this.isFirstRound) {
+            this.currentTurnIndex = 0;   // First round, first player starts
+            this.isFirstRound = false;
+        } else if (extraForLoserId) {
+            // If a loser exists, they start
+            let idx = this.players.findIndex(p => p.id === extraForLoserId && p.active);
+            if (idx !== -1) {
+                this.currentTurnIndex = idx;
+            } else {
+                // If loser inactive, pick next active player
+                this.currentTurnIndex = this.players.findIndex(p => p.active);
+            }
+        } else {
+            // No loser, continue with last currentTurnIndex
+            if (!this.players[this.currentTurnIndex].active) {
+                // If current turn inactive, find next active player
+                this.currentTurnIndex = this.players.findIndex(p => p.active);
+            }
+            // Otherwise, keep currentTurnIndex as-is
+        }
     }
 
     callBS(callerId) {
@@ -156,17 +200,19 @@ class Game {
         const currentPool = getCurrentPool(this.players, this.pot);
 
         return {
-            players: this.players.map(p => ({
+            players: this.players.map((p, idx) => ({
                 id: p.id,
                 name: p.name,
                 hand: p.hand.map(c => `${c.rank}${c.suit}`),
                 active: p.active,
-                minHandSize: p.minHandSize
+                minHandSize: p.minHandSize,
+                isTurn: idx === this.currentTurnIndex
             })),
             pot: this.pot.map(c => `${c.rank}${c.suit}`),
             deckCount: this.deck.length,
             claims: this.claims,
-            currentPool
+            currentPool,
+            currentTurn: this.players[this.currentTurnIndex]?.id || null
         };
     }
 

@@ -31,4 +31,5 @@
 20. Implement probability scale
     -> users can see how likely a claim is
     -> spectators can see if the claim exists in the pool
+21. Request to see someones hand
 

@@ -27,6 +27,25 @@ app.get('/debug/state', (req, res) => {
 io.on('connection', (socket) => {
     console.log('a user connected:', socket.id);
 
+    // Start Game event
+    socket.on("startGame", () => {
+        console.log("Start game triggered");
+
+        game.redealHands();   // reset deck, deal cards, pick first player
+        game.isFirstRound = false;  // after first start, don’t reset again
+
+        // Send hands to each player individually
+        game.players.forEach(p => {
+        io.to(p.id).emit("hand", p.hand);
+        });
+
+        // Send player status
+        io.emit("players", game.getPlayerStatus());
+
+        // Send whose turn it is
+        io.emit("turn", game.players[game.currentTurnIndex].id);
+    });
+
     // Add player to game
     socket.on('join', (name) => {
         const player = game.addPlayer(socket.id, name);
@@ -39,6 +58,7 @@ io.on('connection', (socket) => {
     socket.on('claim', (combo) => {
         const result = game.makeClaim(socket.id, combo);
         io.emit('claimMade', result);
+        io.emit('turn', game.getDebugState().currentTurn); // send whose turn it is
     });
 
     // Player calls BS on a claim
@@ -46,6 +66,7 @@ io.on('connection', (socket) => {
         const result = game.callBS(socket.id, claimantId);
         io.emit('bsResult', result);
         io.emit('players', game.getPlayerStatus()); // update player info
+        io.emit('turn', game.getDebugState().currentTurn);
     });
 
     socket.on('disconnect', () => {

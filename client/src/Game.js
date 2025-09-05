@@ -7,16 +7,23 @@ function Game({ socket }) {
   const [claim, setClaim] = useState('');
   const [lastClaimHistory, setLastClaimHistory] = useState([]);
   const [userName, setUserName] = useState('');
-  const [isActive, setIsActive] = useState(true); // 👈 track if YOU are active
+  const [isActive, setIsActive] = useState(true);
+  const [currentTurn, setCurrentTurn] = useState(null);
 
   useEffect(() => {
+    // socket.on("gameState", (state) => {
+    //   setGameState(state);
+    // });
+
     socket.on('hand', (h) => setHand(h));
+
     socket.on('players', (p) => {
       setPlayers(p);
       // update own active status
       const me = p.find(pl => pl.id === socket.id);
       if (me) setIsActive(me.active);
     });
+
     socket.on('claimMade', (c) => {
       setLastClaimHistory(prev => [...prev, c]);
       // alert(`Player made claim: ${c.combo}`);
@@ -47,16 +54,28 @@ function Game({ socket }) {
 
     socket.on('yourName', (name) => setUserName(name));
 
+    socket.on('turn', (id) => setCurrentTurn(id));
+
     return () => {
+      socket.off("gameState");
       socket.off('hand');
       socket.off('players');
       socket.off('claimMade');
       socket.off('bsResult');
       socket.off('yourName');
+      socket.off('turn');
     };
-  }, [socket]);
+  }, [socket, players]);
+
+  const startGame = () => {
+    socket.emit("startGame");
+  };
 
   const makeClaim = () => {
+    if (socket.id !== currentTurn) {
+      alert("It's not your turn!");
+      return;
+    }
     if (!claim.trim()) return;
     socket.emit('claim', claim);
     setClaim('');
@@ -73,8 +92,16 @@ function Game({ socket }) {
   return (
     <div>
       {/* Top Bar */}
-      <div className="top-bar">
-        Logged in as: {userName} {isActive ? '' : '(Spectator)'}
+      <div 
+        className="top-bar" 
+        style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}
+      >
+        <span>
+          Logged in as: {userName} {isActive ? '' : '(Spectator)'}
+        </span>
+        <button onClick={startGame} style={{ padding: "6px 12px", marginLeft: "10px" }}>
+          Start Game
+        </button>
       </div>
 
       {/* Claim input (only for active players) */}
@@ -85,10 +112,11 @@ function Game({ socket }) {
             onChange={e => setClaim(e.target.value)}
             onKeyDown={handleKeyDown}
             placeholder="Combo claim"
+            disabled={socket.id !== currentTurn}
             />
-            <button onClick={makeClaim}>Make Claim</button>
-
-            {/* One global BS button */}
+            <button onClick={makeClaim} disabled={socket.id !== currentTurn}>
+              Make Claim
+            </button>
             {lastClaimHistory.length > 0 && (
             <button
                 onClick={() => socket.emit('callBS')}
