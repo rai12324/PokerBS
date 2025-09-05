@@ -2,7 +2,7 @@
         -> EX: "one heart" -> "1 heart"
     2. Implement logic for Flush
         -> Royal Flush
-    3. Implement logic for straights
+✔   3. Implement logic for straights
         -> Straight Flush
     4. Implement logic for multiple of a kind
         -> EX: "3 2s" or "three 2s"

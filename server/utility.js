@@ -47,6 +47,17 @@ function parseClaim(cardStr) {
     }
 
     // --------------------- DETECT STRAIGHT ---------------------
+    // Match generic "x-card straight"
+    match = cardStr.match(/(\w+)\s+card\s+straight/);
+    if (match) {
+        let len = parseInt(match[1]); // numeric "6"
+        if (isNaN(len)) {
+            len = number_map[match[1]]; // word "six"
+        }
+        if (!len) return null;
+        return { type: "straight", length: len };
+    }
+
     // Match "straight from ace to five" or "straight from ace through five"
     match = cardStr.match(/straight\s+from\s+(\w+)\s+(?:to|through)\s+(\w+)/);
     if (match) {
@@ -150,18 +161,104 @@ function getCurrentPool(players, pot) {
     return [...playerHands, ...potCards].join(' ');
 }
 
+// function claimExistsInPool(claimStr, players, pot) {
+//     const currentPool = getCurrentPool(players, pot).split(" ");
+//     const parsed = parseClaim(claimStr);
+
+//     console.log("In claimExistsInPool | parsed = ", parsed);
+
+//     if (!parsed) return 0;
+
+//     if (parsed.type === "straight_flush") {
+//         const [start, end] = parsed.range;
+
+//         // Generate needed ranks
+//         const needed = [];
+//         for (let i = start; i <= end; i++) needed.push(i);
+
+//         // Group pool cards by suit
+//         const poolBySuit = { H: [], D: [], C: [], S: [] };
+//         currentPool.forEach(card => {
+//             const rank = card.slice(0, -1);
+//             const suit = card.slice(-1);
+//             let val;
+//             if (rank === "A") val = 1;
+//             else if (rank === "J") val = 11;
+//             else if (rank === "Q") val = 12;
+//             else if (rank === "K") val = 13;
+//             else val = Number(rank);
+//             poolBySuit[suit].push(val);
+//         });
+
+//         // Check each suit if it contains all needed ranks
+//         return Object.values(poolBySuit).some(ranks =>
+//             needed.every(rank => ranks.includes(rank))
+//         );
+//     }
+
+//     if (parsed.type === "flush") {
+//             const claimedCards = parsed.value.split(" ");
+
+//             // Debug Prints
+//             console.log("From claimExistsInPool: ", claimedCards);
+//             console.log("From getCurrentPool: ", currentPool);
+
+//             // Count occurence of suits in pool
+//             const suitCounts = {};
+//             currentPool.forEach(card => {
+//                 const suit = card.slice(-1); // last character is the suit
+//                 suitCounts[suit] = (suitCounts[suit] || 0) + 1;
+//             });
+//             console.log("suitCounts: ", suitCounts);
+
+//             const occurence = {};
+//             claimedCards.forEach(card => {
+//                 const value = card.slice(0, -1);
+//                 const suit = card.slice(-1); // last character is the suit
+//                 occurence[suit] = value;
+//             });
+//             console.log("occurence: ", occurence);
+
+//             return Object.entries(occurence).every(([key, value]) => {
+//                 return Number(value) <= (suitCounts[key] || 0);
+//             });
+//     }
+
+//     if (parsed.type === "straight") {
+//         console.log("In parsed.type === straight");
+//         const [start, end] = parsed.range;
+//         const needed = [];
+//         for (let i = start; i <= end; i++) needed.push(i);
+
+//         console.log("needed: ", needed);
+
+//         // convert ranks in pool into numbers for easier checking
+//         const poolRanks = currentPool.map(card => {
+//             let val = card.slice(0, -1); // everything except suit
+//             if (val === "A") return 1;
+//             if (val === "J") return 11;
+//             if (val === "Q") return 12;
+//             if (val === "K") return 13;
+//             return Number(val);
+//         });
+
+//         console.log("poolRanks: ", poolRanks);
+//         console.log("Return: ", needed.every(rank => poolRanks.includes(rank)));
+
+//         return needed.every(rank => poolRanks.includes(rank));
+//     }
+// }
+
 function claimExistsInPool(claimStr, players, pot) {
     const currentPool = getCurrentPool(players, pot).split(" ");
     const parsed = parseClaim(claimStr);
 
     console.log("In claimExistsInPool | parsed = ", parsed);
-
     if (!parsed) return 0;
 
+    // ------------------- STRAIGHT FLUSH -------------------
     if (parsed.type === "straight_flush") {
         const [start, end] = parsed.range;
-
-        // Generate needed ranks
         const needed = [];
         for (let i = start; i <= end; i++) needed.push(i);
 
@@ -179,63 +276,90 @@ function claimExistsInPool(claimStr, players, pot) {
             poolBySuit[suit].push(val);
         });
 
-        // Check each suit if it contains all needed ranks
+        // Must have all needed ranks in the same suit
         return Object.values(poolBySuit).some(ranks =>
             needed.every(rank => ranks.includes(rank))
         );
     }
 
+    // ----------------------- FLUSH -----------------------
     if (parsed.type === "flush") {
+        if (parsed.suit) {
+            // Case: "flush of clubs"
+            const count = currentPool.filter(card => card.slice(-1) === parsed.suit).length;
+            return count >= 5;
+        } else {
+            // Fallback: use convertCardString logic
             const claimedCards = parsed.value.split(" ");
-
-            // Debug Prints
             console.log("From claimExistsInPool: ", claimedCards);
             console.log("From getCurrentPool: ", currentPool);
 
-            // Count occurence of suits in pool
+            // Count suits in pool
             const suitCounts = {};
             currentPool.forEach(card => {
-                const suit = card.slice(-1); // last character is the suit
+                const suit = card.slice(-1);
                 suitCounts[suit] = (suitCounts[suit] || 0) + 1;
             });
-            console.log("suitCounts: ", suitCounts);
 
             const occurence = {};
             claimedCards.forEach(card => {
                 const value = card.slice(0, -1);
-                const suit = card.slice(-1); // last character is the suit
+                const suit = card.slice(-1);
                 occurence[suit] = value;
             });
-            console.log("occurence: ", occurence);
 
             return Object.entries(occurence).every(([key, value]) => {
                 return Number(value) <= (suitCounts[key] || 0);
             });
+        }
     }
 
+    // ---------------------- STRAIGHT ----------------------
     if (parsed.type === "straight") {
-        console.log("In parsed.type === straight");
-        const [start, end] = parsed.range;
-        const needed = [];
-        for (let i = start; i <= end; i++) needed.push(i);
+        // Case: "six card straight"
+        if (parsed.length) {
+            const values = [...new Set(currentPool.map(card => {
+                let val = card.slice(0, -1);
+                if (val === "A") return 1;
+                if (val === "J") return 11;
+                if (val === "Q") return 12;
+                if (val === "K") return 13;
+                return Number(val);
+            }))].sort((a, b) => a - b);
 
-        console.log("needed: ", needed);
+            // Look for any run of N consecutive values
+            for (let i = 0; i <= values.length - parsed.length; i++) {
+                let run = 1;
+                for (let j = i; j < values.length - 1; j++) {
+                    if (values[j + 1] === values[j] + 1) {
+                        run++;
+                        if (run >= parsed.length) return true;
+                    } else break;
+                }
+            }
+            return false;
+        }
 
-        // convert ranks in pool into numbers for easier checking
-        const poolRanks = currentPool.map(card => {
-            let val = card.slice(0, -1); // everything except suit
-            if (val === "A") return 1;
-            if (val === "J") return 11;
-            if (val === "Q") return 12;
-            if (val === "K") return 13;
-            return Number(val);
-        });
+        // Case: "straight ace to five"
+        if (parsed.range) {
+            const [start, end] = parsed.range;
+            const needed = [];
+            for (let i = start; i <= end; i++) needed.push(i);
 
-        console.log("poolRanks: ", poolRanks);
-        console.log("Return: ", needed.every(rank => poolRanks.includes(rank)));
+            const poolRanks = currentPool.map(card => {
+                let val = card.slice(0, -1);
+                if (val === "A") return 1;
+                if (val === "J") return 11;
+                if (val === "Q") return 12;
+                if (val === "K") return 13;
+                return Number(val);
+            });
 
-        return needed.every(rank => poolRanks.includes(rank));
+            return needed.every(rank => poolRanks.includes(rank));
+        }
     }
+
+    return false;
 }
 
 module.exports = { convertCardString, getCurrentPool, claimExistsInPool };
