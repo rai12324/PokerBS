@@ -61,7 +61,26 @@ function parseClaim(cardStr) {
     }
 
     // --------------------- DETECT MULTIPLES --------------------
-    // --------------------- DETECT MULTIPLES --------------------
+    match = cardStr.match(/^(\d+)\s+(ace|aces|king|kings|queen|queens|jack|jacks|ten|tens|[2-9]|10)s?$/i);
+    if (match) {
+        const count = parseInt(match[1], 10); // first capture = number of cards
+        let rankWord = match[2].toLowerCase();
+
+        // Normalize plural rank words: "tens" -> "ten", "queens" -> "queen"
+        if (!(rankWord in number_map)) {
+            if (rankWord.endsWith("s")) {
+                rankWord = rankWord.slice(0, -1);
+            }
+        }
+
+        const rank = wordOrNumberToValue(rankWord, number_map);
+
+        if (!count || !rank) return null;
+        return { type: "multiples", count, rank };
+    }
+
+    
+
     match = cardStr.match(/^(?:(pair|two|three|trio|triple|quad|four)(?:\s+of)?\s+(?!hearts?|spades?|clubs?|diamonds?)(\w+))$/);
     if (match) {
         const countWord = match[1].toLowerCase();
