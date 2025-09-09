@@ -40,9 +40,56 @@ function parseClaim(cardStr) {
 
     cardStr = cardStr.toLowerCase().trim();
 
+    // --------------------- DETECT SUIT FLUSH (e.g. "2 hearts") --------------------
+    let match = cardStr.match(/^(one|two|three|four|five|six|seven|eight|nine|ten|eleven|twelve|thirteen|fourteen|fifteen|sixteen|\d+)\s+(hearts?|spades?|clubs?|diamonds?)$/);
+    if (match) {
+        const countWord = match[1].toLowerCase();
+        const suitWord = match[2].toLowerCase();
+
+        const count = wordToNumber(countWord) || parseInt(countWord, 10);
+
+        const suit_map = {
+            hearts: "H", heart: "H",
+            spades: "S", spade: "S",
+            clubs: "C", club: "C",
+            diamonds: "D", diamond: "D"
+        };
+        const suit = suit_map[suitWord];
+
+        if (!count || !suit) return null;
+        return { type: "flush", length: count, suit };
+    }
+
+    // --------------------- DETECT MULTIPLES --------------------
+    // --------------------- DETECT MULTIPLES --------------------
+    match = cardStr.match(/^(?:(pair|two|three|trio|triple|quad|four)(?:\s+of)?\s+(?!hearts?|spades?|clubs?|diamonds?)(\w+))$/);
+    if (match) {
+        const countWord = match[1].toLowerCase();
+        let rankWord = match[2].toLowerCase();
+
+        const count_map = {
+            pair: 2, two: 2,
+            three: 3, trio: 3, triple: 3,
+            four: 4, quad: 4
+        };
+        const count = count_map[countWord];
+
+        // Normalize plural rank words: "tens" -> "ten", "queens" -> "queen"
+        if (!(rankWord in number_map)) {
+            if (rankWord.endsWith("s")) {
+                rankWord = rankWord.slice(0, -1);
+            }
+        }
+
+        const rank = wordOrNumberToValue(rankWord, number_map);
+
+        if (!count || !rank) return null;
+        return { type: "multiples", count, rank };
+    }
+
     // ------------------ DETECT STRAIGHT FLUSH ------------------
     // Match "straight flush ace to five" or "straight flush ace through five"
-    let match = cardStr.match(/straight\s+flush\s+(\w+)\s+(?:to|through)\s+(\w+)/);
+    match = cardStr.match(/straight\s+flush\s+(\w+)\s+(?:to|through)\s+(\w+)/);
     if (match) {
         const start = wordOrNumberToValue(match[1], number_map);
         const end = wordOrNumberToValue(match[2], number_map);
@@ -295,6 +342,25 @@ function claimExistsInPool(claimStr, players, pot) {
     console.log("In claimExistsInPool | parsed = ", parsed);
     if (!parsed) return 0;
 
+    // ------------------- MULTIPLES -------------------
+    if (parsed.type === "multiples") {
+        const { count, rank } = parsed;
+
+        // Count how many cards of that rank are in the pool
+        const poolRanks = currentPool.map(card => {
+            let val = card.slice(0, -1); // everything except suit
+            if (val === "A") return 1;
+            if (val === "J") return 11;
+            if (val === "Q") return 12;
+            if (val === "K") return 13;
+            return Number(val);
+        });
+
+        const occurrences = poolRanks.filter(r => r === rank).length;
+
+        return occurrences >= count;
+    }
+
     // ------------------- STRAIGHT FLUSH -------------------
     if (parsed.type === "straight_flush") {
         const [start, end] = parsed.range;
@@ -323,8 +389,14 @@ function claimExistsInPool(claimStr, players, pot) {
 
     // ----------------------- FLUSH -----------------------
     if (parsed.type === "flush") {
+        // Case: "2 hearts", "six clubs", "10 spades"
+        if (parsed.length && parsed.suit) {
+            const count = currentPool.filter(card => card.slice(-1) === parsed.suit).length;
+            return count >= parsed.length;
+        }
+
+        // Case: "six card flush" (any suit)
         if (parsed.length) {
-            // Case: "six card flush"
             const suitCounts = {};
             currentPool.forEach(card => {
                 const suit = card.slice(-1);
@@ -332,35 +404,37 @@ function claimExistsInPool(claimStr, players, pot) {
             });
             return Object.values(suitCounts).some(count => count >= parsed.length);
         }
+
+        // Case: "flush of clubs" or "flush hearts"
         if (parsed.suit) {
-            // Case: "flush of clubs"
             const count = currentPool.filter(card => card.slice(-1) === parsed.suit).length;
             return count >= 5;
-        } else {
-            // Fallback: use convertCardString logic
-            const claimedCards = parsed.value.split(" ");
-            console.log("From claimExistsInPool: ", claimedCards);
-            console.log("From getCurrentPool: ", currentPool);
-
-            // Count suits in pool
-            const suitCounts = {};
-            currentPool.forEach(card => {
-                const suit = card.slice(-1);
-                suitCounts[suit] = (suitCounts[suit] || 0) + 1;
-            });
-
-            const occurence = {};
-            claimedCards.forEach(card => {
-                const value = card.slice(0, -1);
-                const suit = card.slice(-1);
-                occurence[suit] = value;
-            });
-
-            return Object.entries(occurence).every(([key, value]) => {
-                return Number(value) <= (suitCounts[key] || 0);
-            });
         }
+
+        // Fallback: use convertCardString logic
+        const claimedCards = parsed.value.split(" ");
+        console.log("From claimExistsInPool: ", claimedCards);
+        console.log("From getCurrentPool: ", currentPool);
+
+        // Count suits in pool
+        const suitCounts = {};
+        currentPool.forEach(card => {
+            const suit = card.slice(-1);
+            suitCounts[suit] = (suitCounts[suit] || 0) + 1;
+        });
+
+        const occurence = {};
+        claimedCards.forEach(card => {
+            const value = card.slice(0, -1);
+            const suit = card.slice(-1);
+            occurence[suit] = value;
+        });
+
+        return Object.entries(occurence).every(([key, value]) => {
+            return Number(value) <= (suitCounts[key] || 0);
+        });
     }
+
 
     // ---------------------- STRAIGHT ----------------------
     if (parsed.type === "straight") {
